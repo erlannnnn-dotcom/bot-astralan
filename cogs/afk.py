@@ -35,7 +35,7 @@ class AFK(commands.Cog):
             "since": datetime.utcnow()
         }
 
-        # ubah nickname jadi [AFK]
+        # Ubah nickname jadi [AFK]
         try:
             if interaction.guild:
                 await user.edit(nick=f"[AFK] {user.display_name}")
@@ -43,11 +43,15 @@ class AFK(commands.Cog):
             pass
 
         embed = discord.Embed(
-            title="🌙 Kamu sekarang AFK",
-            description=f"**Alasan:** {reason}",
+            title="🌙 AFK Status Aktif",
+            description=(
+                f"{user.mention} telah mengaktifkan status AFK.\n\n"
+                f"**Alasan**\n{reason}"
+            ),
             color=self.random_color()
         )
-        embed.set_footer(text="Status AFK aktif")
+
+        embed.set_footer(text="Status akan otomatis nonaktif saat kamu kembali")
 
         await interaction.response.send_message(embed=embed)
 
@@ -62,7 +66,7 @@ class AFK(commands.Cog):
             afk_time = (datetime.utcnow() - data["since"]).total_seconds()
             waktu = self.format_time(int(afk_time))
 
-            # balikin nickname
+            # Balikin nickname
             try:
                 if message.guild:
                     original_name = message.author.display_name.replace("[AFK] ", "")
@@ -71,13 +75,17 @@ class AFK(commands.Cog):
                 pass
 
             embed = discord.Embed(
-                title="👋 Welcome Back!",
-                description=f"{message.author.mention} sudah kembali dari AFK\n\n⏳ Durasi AFK: **{waktu}**",
+                title="👋 Welcome Back",
+                description=(
+                    f"{message.author.mention} telah kembali.\n\n"
+                    f"**Durasi AFK**\n{waktu}"
+                ),
                 color=self.random_color()
             )
+
             await message.channel.send(embed=embed)
 
-        # CEK ORANG YANG DI MENTION
+        # CEK MENTION
         for user in message.mentions:
             if user.id in self.afk_users:
                 data = self.afk_users[user.id]
@@ -85,11 +93,11 @@ class AFK(commands.Cog):
                 waktu = self.format_time(int(afk_time))
 
                 embed = discord.Embed(
-                    title="⚠️ User sedang AFK",
+                    title="⚠️ Pengguna Sedang AFK",
                     description=(
-                        f"{user.mention} sedang AFK\n"
-                        f"📝 Alasan: **{data['reason']}**\n"
-                        f"⏳ Sejak: **{waktu} yang lalu**"
+                        f"{user.mention} saat ini tidak tersedia.\n\n"
+                        f"**Alasan**\n{data['reason']}\n\n"
+                        f"**Sejak**\n{waktu} yang lalu"
                     ),
                     color=self.random_color()
                 )
