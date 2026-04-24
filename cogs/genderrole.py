@@ -24,7 +24,8 @@ class GenderSelect(discord.ui.Select):
             placeholder="⚧️ Pilih gender role kamu...",
             min_values=1,
             max_values=1,  # cuma boleh pilih satu
-            options=options
+            options=options,
+            custom_id="gender_select"
         )
 
     async def callback(self, interaction: discord.Interaction):

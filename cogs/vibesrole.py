@@ -28,7 +28,8 @@ class RoleSelect(discord.ui.Select):
             placeholder="✨ Pilih vibe kamu...",
             min_values=1,
             max_values=len(options),
-            options=options
+            options=options,
+            custom_id="vibe_select"
         )
 
     async def callback(self, interaction: discord.Interaction):

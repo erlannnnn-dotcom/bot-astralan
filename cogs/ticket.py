@@ -133,23 +133,22 @@ class TicketView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
 
-    @discord.ui.button(label="Keluhan", style=discord.ButtonStyle.primary)
+    @discord.ui.button(label="Keluhan", style=discord.ButtonStyle.primary, custom_id="ticket_keluhan")
     async def keluhan(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.send_modal(TicketModal("Keluhan"))
 
-    @discord.ui.button(label="Report", style=discord.ButtonStyle.danger)
+    @discord.ui.button(label="Report", style=discord.ButtonStyle.danger, custom_id="ticket_report")
     async def report(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.send_modal(TicketModal("Report"))
 
-    @discord.ui.button(label="Donate", style=discord.ButtonStyle.success)
+    @discord.ui.button(label="Donate", style=discord.ButtonStyle.success, custom_id="ticket_donate")
     async def donate(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.send_modal(TicketModal("Donate"))
 
-    @discord.ui.button(label="Partnership", style=discord.ButtonStyle.secondary)
+    @discord.ui.button(label="Partnership", style=discord.ButtonStyle.secondary, custom_id="ticket_partner")
     async def partner(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.send_modal(TicketModal("Partnership"))
-
-
+        
 # ======== COG ========
 class Ticket(commands.Cog):
     def __init__(self, bot):

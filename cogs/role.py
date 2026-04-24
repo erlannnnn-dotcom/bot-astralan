@@ -33,7 +33,8 @@ class GameSelect(discord.ui.Select):
             placeholder="🎮 Pilih game favorit kamu...",
             min_values=1,
             max_values=len(options),
-            options=options
+            options=options,
+            custom_id="game_select"
         )
 
     async def callback(self, interaction: discord.Interaction):

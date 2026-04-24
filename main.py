@@ -2,6 +2,10 @@ import discord
 from discord.ext import commands
 import os
 from dotenv import load_dotenv
+from cogs.role import GameRoleView
+from cogs.vibesrole import RoleView
+from cogs.genderrole import GenderView
+from cogs.ticket import TicketView
 
 load_dotenv()
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
@@ -16,6 +20,13 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 @bot.event
 async def on_ready():
     print(f"Bot aktif sebagai {bot.user}")
+
+    bot.add_view(GameRoleView())
+    bot.add_view(RoleView())
+    bot.add_view(GenderView())
+    bot.add_view(TicketView())
+
+    print("Views registered")
 
 # ================= LOAD COGS =================
 async def load_extensions():
