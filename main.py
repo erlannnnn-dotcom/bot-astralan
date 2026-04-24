@@ -15,10 +15,7 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 # ================= READY =================
 @bot.event
 async def on_ready():
-    bot.add_view(RoleView())
-    bot.add_view(VibesroleView())
-    bot.add_view(GenderroleView())
-    print(f"Login sebagai {bot.user}")
+    print(f"Bot aktif sebagai {bot.user}")
 
 # ================= LOAD COGS =================
 async def load_extensions():
