@@ -72,6 +72,7 @@ class Role(commands.Cog):
         self.bot = bot
 
     @commands.command(name="setup_role")
+    @commands.has_permissions(administrator=True)
     async def setup_role(self, ctx):
         embed = discord.Embed(
             title="Game Roles Panel",

@@ -67,6 +67,7 @@ class Vibesrole(commands.Cog):
         self.bot = bot
 
     @commands.command(name="setup_vibe")
+    @commands.has_permissions(administrator=True)
     async def setup_vibe(self, ctx):
         embed = discord.Embed(
             title="Vibe Roles Panel",

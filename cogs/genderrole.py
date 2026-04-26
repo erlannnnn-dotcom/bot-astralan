@@ -62,6 +62,7 @@ class GenderRole(commands.Cog):
         self.bot = bot
 
     @commands.command(name="setup_gender")
+    @commands.has_permissions(administrator=True)
     async def setup_gender(self, ctx):
         embed = discord.Embed(
             title="Gender Roles Panel",

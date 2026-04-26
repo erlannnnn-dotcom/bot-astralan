@@ -52,6 +52,7 @@ class Booster(commands.Cog):
 
     # 🧪 COMMAND TEST
     @commands.command(name="test_boost")
+    @commands.has_permissions(administrator=True)
     async def test_boost(self, ctx):
         await self.send_boost_embed(ctx.author)
         await ctx.send("Test boost berhasil dikirim!")
