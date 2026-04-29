@@ -155,6 +155,7 @@ class Ticket(commands.Cog):
         self.bot = bot
 
     @commands.command(name="setup_ticket")
+    @commands.has_permissions(administrator=True)
     async def setup_ticket(self, ctx):
         embed = discord.Embed(
             title="Astral Support Gateway",
