@@ -4,6 +4,7 @@ from PIL import Image, ImageDraw, ImageFont
 import aiohttp
 import io
 import os
+from typing import List, Optional, Union
 
 # ─────────────────────────────────────────────────────────────────────────────
 #  KONFIGURASI
