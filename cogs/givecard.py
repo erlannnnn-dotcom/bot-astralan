@@ -53,8 +53,7 @@ def text_height(font: ImageFont.FreeTypeFont, text: str) -> int:
     bbox = font.getbbox(text)
     return bbox[3] - bbox[1]
 
-
-def wrap_text(text: str, font: ImageFont.FreeTypeFont, max_width: int) -> list[str]:
+def wrap_text(text: str, font: ImageFont.FreeTypeFont, max_width: int) -> List[str]:  # ✅ Aman untuk Python 3.8
     words = text.split()
     lines, line = [], ""
     for word in words:
