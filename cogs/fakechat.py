@@ -180,15 +180,14 @@ def load_verified_icon(size: int = 24):
         return img.resize((size, size), Image.LANCZOS)
     return None
 
-
 def generate_image(
     platform: str,
     username: str,
     text: str,
     time_str: str,
-    avatar_img: Image.Image | None,
+    avatar_img: Optional[Image.Image] = None,  # ✅ Diperbaiki
     status: str = "online",
-    member: discord.Member | None = None,
+    member: Optional[discord.Member] = None,  # ✅ Diperbaiki
 ) -> io.BytesIO:
     """Buat gambar fake chat di atas template background."""
     layout = LAYOUT[platform]
