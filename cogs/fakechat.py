@@ -157,8 +157,7 @@ def circle_crop(img: Image.Image, size: tuple) -> Image.Image:
     result.paste(img, mask=mask)
     return result
 
-
-async def fetch_avatar(avatar_url: str, size: tuple) -> Image.Image | None:
+async def fetch_avatar(avatar_url: str, size: tuple) -> Optional[Image.Image]:  # ✅ Aman untuk Python 3.8
     """Download avatar dari URL dan kembalikan sebagai gambar lingkaran."""
     try:
         async with aiohttp.ClientSession() as session:
