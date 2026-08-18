@@ -7,6 +7,7 @@ import io
 import os
 import textwrap
 from datetime import datetime
+from typing import Optional, Union
 
 # ─── CONFIG ───────────────────────────────────────────────────────────────────
 # Role ID VIP (isi dengan ID role VIP kamu)
@@ -306,10 +307,11 @@ class FakeChat(commands.Cog):
         interaction: discord.Interaction,
         username: str,
         text: str,
-        platform: app_commands.Choice[str] | None = None,
+        platform: Optional[app_commands.Choice[str]] = None, # ✅ Aman untuk Python 3.8
         status: str = "online",
-        time: str | None = None,
+        time: Optional[str] = None,                          # ✅ Aman untuk Python 3.8
     ):
+
         await interaction.response.defer()
 
         member = interaction.user
