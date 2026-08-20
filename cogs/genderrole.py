@@ -253,8 +253,7 @@ class GenderSelect(discord.ui.Select):
             embed = discord.Embed(
                 description=(
                     f"Berhasil mendapatkan role "
-                    f"**{selected_role.name}** {selected_data['emoji']}\n\n"
-                    "Role gender kamu telah diperbarui."
+                    f"**{selected_role.name}** {selected_data['emoji']}"
                 ),
                 color=discord.Color.from_rgb(
                     186,
