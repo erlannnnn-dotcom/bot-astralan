@@ -251,7 +251,6 @@ class GenderSelect(discord.ui.Select):
                 return
 
             embed = discord.Embed(
-                title="✨ Gender Role Updated",
                 description=(
                     f"Berhasil mendapatkan role "
                     f"**{selected_role.name}** {selected_data['emoji']}\n\n"
@@ -262,10 +261,6 @@ class GenderSelect(discord.ui.Select):
                     104,
                     200
                 )
-            )
-
-            embed.set_footer(
-                text="Astralan Gender System"
             )
 
             await interaction.response.send_message(
