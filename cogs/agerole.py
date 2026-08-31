@@ -81,8 +81,8 @@ class Agerole(commands.Cog):
             color=discord.Color.blue()
         )
 
-        file = discord.File("banner_vibes.png", filename="vibes.png")
-        embed.set_image(url="attachment://vibes.png")
+        file = discord.File("banner_age.png", filename="age.png")   
+        embed.set_image(url="attachment://age.png")
 
         embed.add_field(
             name="Available Roles",
