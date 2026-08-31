@@ -9,11 +9,20 @@ STATUS_CHANNEL_ID = 1544029661946839070
 
 
 class UploadView(discord.ui.View):
-    def __init__(self, bot, user_status_text, user_mood):
+    def __init__(self, bot, user_status_text, user_mood, author_id):
         super().__init__(timeout=300)
         self.bot = bot
         self.status_text = user_status_text
         self.mood = user_mood
+        self.author_id = author_id
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if interaction.user.id != self.author_id:
+            await interaction.response.send_message(
+                "❌ Ini bukan status milikmu!", ephemeral=True
+            )
+            return False
+        return True
 
     async def send_status(
         self,
@@ -155,13 +164,21 @@ class UploadView(discord.ui.View):
                 ephemeral=True
             )
             await self.send_status(interaction)
-            return
+            # Hapus pesan konfirmasi publik
+            try:
+                await interaction.message.delete()
+            except:
+                return
 
         await self.send_status(interaction, files=files, stickers=stickers)
         await interaction.followup.send(
             "**✨ Status Astralan berhasil dikirim dengan media!**",
             ephemeral=True
         )
+        try:
+            await interaction.message.delete()
+        except:
+            pass
 
     @discord.ui.button(
         label="⏭️ Kirim Langsung (Tanpa Media)",
@@ -179,6 +196,10 @@ class UploadView(discord.ui.View):
             "**✨ Status Astralan berhasil dikirim!**",
             ephemeral=True
         )
+        try:
+            await interaction.message.delete()
+        except:
+            pass
 
 
 class AutoStatus(commands.Cog):
@@ -204,15 +225,12 @@ class AutoStatus(commands.Cog):
         except:
             pass
 
-        # Kirim panel konfirmasi privat (hanya bisa dilihat oleh pengirim pesan)
+        # Kirim pesan konfirmasi publik di channel (bisa diklik tombolnya oleh pengirim)
         await message.channel.send(
-            f"**📝 Konfirmasi Status Astralan**\n"
+            f"**📝 Konfirmasi Status Astralan ({message.author.mention})**\n"
             f"> *\"{status_text}\"*\n\n"
             f"Apakah kamu ingin menambahkan foto, lagu, atau stiker?",
-            view=UploadView(self.bot, status_text, user_mood=""),
-            ephemeral=True  # Catatan: Pesan biasa tidak bisa langsung ephemeral, 
-            # jika ingin murni ephemeral, fitur ini memanfaatkan interaksi tombol. 
-            # Sebagai alternatif aman di text channel biasa, bot akan mengirim pesan yang bisa di-delete sendiri atau dikhususkan.
+            view=UploadView(self.bot, status_text, user_mood="", author_id=message.author.id)
         )
 
 
