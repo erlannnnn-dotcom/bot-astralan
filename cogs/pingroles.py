@@ -2,11 +2,11 @@ import discord
 from discord.ext import commands
 
 ROLES = {
-    "🎉 | Giveaway Alerts": {"id": 1544020602795462758, "emoji": "🎉"},
-    "🍿 | Movie Nights": {"id": 1544020705728008323, "emoji": "🍿"},
-    "📢 | Update Ping": {"id": 1544020788993065012, "emoji": "📢"},
-    "💬 | Active Chatter": {"id": 1544020861814571184, "emoji": "💬"},
-    "🔊 | VC Ping": {"id": 1544021003749953609, "emoji": "🔊"}
+    "🎉 Giveaway Alerts": {"id": 1544020602795462758, "emoji": "🎉"},
+    "🍿 Movie Nights": {"id": 1544020705728008323, "emoji": "🍿"},
+    "📢 Update Ping": {"id": 1544020788993065012, "emoji": "📢"},
+    "💬 Active Chatter": {"id": 1544020861814571184, "emoji": "💬"},
+    "🔊 VC Ping": {"id": 1544021003749953609, "emoji": "🔊"}
 }
 
 

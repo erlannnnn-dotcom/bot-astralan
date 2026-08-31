@@ -87,7 +87,7 @@ class Agerole(commands.Cog):
         embed.add_field(
             name="Available Roles",
             value="\n".join(
-                [f"{data['emoji']} : {name}" for name, data in ROLES.items()]
+                [f"{data['emoji']} {name}" for name, data in ROLES.items()]
             ),
             inline=False
         )

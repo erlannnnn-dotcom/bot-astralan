@@ -29,6 +29,8 @@ class RoleSelect(discord.ui.Select):
         )
 
     async def callback(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+
         added = []
         removed = []
 
@@ -58,7 +60,7 @@ class RoleSelect(discord.ui.Select):
         if not msg:
             msg = "Role kamu sudah sesuai!"
 
-        await interaction.response.send_message(msg, ephemeral=True)
+        await interaction.followup.send(msg, ephemeral=True)
 
 
 class RoleView(discord.ui.View):
@@ -86,7 +88,7 @@ class BotGames(commands.Cog):
         embed.add_field(
             name="Available Roles",
             value="\n".join(
-                [f"{data['emoji']} : {name}" for name, data in ROLES.items()]
+                [f"{data['emoji']} {name}" for name, data in ROLES.items()]
             ),
             inline=False
         )
