@@ -7,8 +7,8 @@ import re
 # CONFIG
 # =========================================================
 
-# ID bot Arcane
-ARCANE_BOT_ID = 437808476106784770
+# Ganti dengan ID bot "AST Arcane" yang tampil di server kamu
+ARCANE_BOT_ID = 1496893755909734560  # <- Sesuaikan dengan ID asli bot Arcane
 
 # Channel tempat Arcane mengirim log level
 ARCANE_LOG_CHANNEL_ID = 1496893755909734560
@@ -28,7 +28,6 @@ LEVEL_ROLES = {
     75: 1539868797236940841,  # AST Legend
 }
 
-
 LEVEL_ROLE_NAMES = {
     10: "AST Newcomer",
     20: "AST Active",
@@ -46,11 +45,6 @@ class ASTLevel(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-
-    # =====================================================
-    # ARCANE LEVEL UP DETECTOR
-    # =====================================================
-
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
 
@@ -62,39 +56,19 @@ class ASTLevel(commands.Cog):
         if message.author.id != ARCANE_BOT_ID:
             return
 
-        # =================================================
-        # AMBIL SEMUA TEXT DARI PESAN / EMBED
-        # =================================================
-
-        text_parts = []
-
-        if message.content:
-            text_parts.append(message.content)
-
-        for embed in message.embeds:
-
-            if embed.title:
-                text_parts.append(embed.title)
-
-            if embed.description:
-                text_parts.append(embed.description)
-
-            if embed.footer and embed.footer.text:
-                text_parts.append(embed.footer.text)
-
-            for field in embed.fields:
-                text_parts.append(field.name)
-                text_parts.append(field.value)
-
-        text = " ".join(text_parts)
-
+        # Ambil teks dari message.content (karena format Arcane di gambar adalah teks biasa)
+        text = message.content
+        if not text and message.embeds:
+            # Fallback jika suatu saat pakai embed
+            text_parts = [emb.description for emb in message.embeds if emb.description]
+            text = " ".join(text_parts)
 
         # =================================================
-        # DETECT LEVEL
+        # DETECT LEVEL (Disesuaikan dengan format gambar)
         # =================================================
-
+        # Contoh teks: "@finn telah mencapai level 8. Letsgoww..."
         level_match = re.search(
-            r"(?:level|lvl)\s*[:#-]?\s*(\d+)",
+            r"level\D*(\d+)",
             text,
             re.IGNORECASE
         )
@@ -104,11 +78,9 @@ class ASTLevel(commands.Cog):
 
         level = int(level_match.group(1))
 
-
         # =================================================
         # TENTUKAN ROLE TERTINGGI
         # =================================================
-
         available_levels = [
             lvl for lvl in LEVEL_ROLES
             if level >= lvl
@@ -118,35 +90,23 @@ class ASTLevel(commands.Cog):
             return
 
         target_level = max(available_levels)
-
         target_role_id = LEVEL_ROLES[target_level]
 
         guild = message.guild
-
         if guild is None:
             return
 
         target_role = guild.get_role(target_role_id)
-
         if target_role is None:
-            print(
-                f"[AST LEVEL] Role ID {target_role_id} "
-                f"tidak ditemukan."
-            )
+            print(f"[AST LEVEL] Role ID {target_role_id} tidak ditemukan.")
             return
-
 
         # =================================================
         # CARI MEMBER
         # =================================================
-
         member = None
-
-        # Prioritas pertama: member yang di-mention
         if message.mentions:
-
             for mentioned_member in message.mentions:
-
                 if not mentioned_member.bot:
                     member = mentioned_member
                     break
@@ -154,92 +114,50 @@ class ASTLevel(commands.Cog):
         if member is None:
             return
 
-
         # =================================================
         # CEK LEVEL ROLE MEMBER SEKARANG
         # =================================================
-
         current_level = 0
-
         for lvl, role_id in LEVEL_ROLES.items():
-
             role = guild.get_role(role_id)
-
             if role and role in member.roles:
                 current_level = max(current_level, lvl)
 
-
-        # Kalau sudah memiliki role yang sama / lebih tinggi
         if current_level >= target_level:
             return
-
 
         # =================================================
         # HAPUS ROLE LEVEL SEBELUMNYA
         # =================================================
-
         old_roles = []
-
         for lvl, role_id in LEVEL_ROLES.items():
-
             if lvl == target_level:
                 continue
-
             role = guild.get_role(role_id)
-
             if role and role in member.roles:
                 old_roles.append(role)
 
-
         if old_roles:
-
             try:
-
-                await member.remove_roles(
-                    *old_roles,
-                    reason="AST Level Role Upgrade"
-                )
-
+                await member.remove_roles(*old_roles, reason="AST Level Role Upgrade")
             except discord.Forbidden:
-
-                print(
-                    f"[AST LEVEL] Tidak bisa menghapus "
-                    f"role lama dari {member}."
-                )
-
+                print(f"[AST LEVEL] Tidak bisa menghapus role lama dari {member}.")
 
         # =================================================
         # BERIKAN ROLE BARU
         # =================================================
-
         try:
-
-            await member.add_roles(
-                target_role,
-                reason=f"AST Level {target_level}"
-            )
-
+            await member.add_roles(target_role, reason=f"AST Level {target_level}")
         except discord.Forbidden:
-
-            print(
-                f"[AST LEVEL] Tidak bisa memberikan "
-                f"{target_role.name} kepada {member}."
-            )
-
+            print(f"[AST LEVEL] Tidak bisa memberikan {target_role.name} kepada {member}.")
             return
-
 
         # =================================================
         # NOTIFICATION
         # =================================================
-
-        notification_channel = guild.get_channel(
-            LEVEL_NOTIFICATION_CHANNEL_ID
-        )
-
+        notification_channel = guild.get_channel(LEVEL_NOTIFICATION_CHANNEL_ID)
         if notification_channel is None:
             return
-
 
         embed = discord.Embed(
             title="✨ Level Up!",
@@ -251,45 +169,15 @@ class ASTLevel(commands.Cog):
             color=discord.Color.from_rgb(186, 104, 200)
         )
 
-        embed.set_thumbnail(
-            url=member.display_avatar.url
-        )
+        embed.set_thumbnail(url=member.display_avatar.url)
+        embed.add_field(name="Level", value=f"**{level}**", inline=True)
+        embed.add_field(name="New Role", value=target_role.mention, inline=True)
+        embed.set_footer(text="Astralan Level System")
 
-        embed.add_field(
-            name="Level",
-            value=f"**{level}**",
-            inline=True
-        )
+        await notification_channel.send(embed=embed)
 
-        embed.add_field(
-            name="New Role",
-            value=target_role.mention,
-            inline=True
-        )
+        print(f"[AST LEVEL] {member} → Level {level} → {target_role.name}")
 
-        embed.set_footer(
-            text="Astralan Level System"
-        )
-
-
-        await notification_channel.send(
-            embed=embed
-        )
-
-
-        # =================================================
-        # CONSOLE LOG
-        # =================================================
-
-        print(
-            f"[AST LEVEL] {member} → "
-            f"Level {level} → {target_role.name}"
-        )
-
-
-# =========================================================
-# SETUP
-# =========================================================
 
 async def setup(bot):
     await bot.add_cog(ASTLevel(bot))
