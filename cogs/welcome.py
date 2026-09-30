@@ -1,7 +1,7 @@
 import asyncio
 import random
 from datetime import datetime, timedelta, timezone
-from functools import lru_cache
+from functools import lru_cache, partial
 from io import BytesIO
 from typing import Optional
 
@@ -13,7 +13,7 @@ from PIL import Image, ImageChops, ImageDraw, ImageEnhance, ImageFilter, ImageFo
 #  KONFIGURASI
 # ══════════════════════════════════════════════════════════════════════════════
 WELCOME_CHANNEL_ID = 1497149920006639718
-LEAVE_CHANNEL_ID   = 1497151497983623320  # ganti kalau channel leave beda
+LEAVE_CHANNEL_ID   = 1497151497983623320   # ganti kalau channel leave beda
 
 SERVER_NAME = "Astralan"
 SKIP_BOTS   = True                          # True = akun bot tidak dikirimi notif
@@ -328,8 +328,10 @@ class Welcome(commands.Cog):
         except Exception:
             avatar_bytes = None
 
-        card = await asyncio.to_thread(
-            render_card, self.src, self.static[kind], kind, member.display_name, avatar_bytes, count, when
+        loop = asyncio.get_running_loop()  # kompatibel Python 3.8
+        card = await loop.run_in_executor(
+            None,
+            partial(render_card, self.src, self.static[kind], kind, member.display_name, avatar_bytes, count, when),
         )
         buf = BytesIO()
         card.save(buf, format="PNG")
