@@ -15,7 +15,7 @@ class StaffDirectory(commands.Cog):
         # CONFIG
         # ==========================================
 
-        self.CHANNEL_ID = 1553032690465251410
+        self.CHANNEL_ID = 1555101827521847366
 
         # Emoji animasi server (judul panel pertama)
         self.ARROW_BLUE = "<a:arrowblue:1555096801629970523>"
