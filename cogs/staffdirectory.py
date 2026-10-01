@@ -242,7 +242,7 @@ class StaffDirectory(commands.Cog):
 
                 self.save_activity()
 
-            return online_emoji, "Aktif sekarang"
+            return online_emoji, "Aktif"
 
         # ======================================
         # STAFF SUDAH OFFLINE
@@ -999,6 +999,42 @@ class StaffDirectory(commands.Cog):
         print(
             "[STAFF DIRECTORY] "
             "Directory berhasil dibuat."
+        )
+
+    # ==========================================
+    # CEK STATUS (DIAGNOSA)
+    # ==========================================
+
+    @commands.command(
+        name="cekstatus"
+    )
+    @commands.has_permissions(
+        administrator=True
+    )
+    async def cek_status(
+        self,
+        ctx
+    ):
+        """Cek apakah bot bisa membaca status online member."""
+
+        intents = self.bot.intents
+
+        presence = (
+            "AKTIF"
+            if intents.presences
+            else "MATI (semua member terbaca offline)"
+        )
+
+        members = (
+            "AKTIF"
+            if intents.members
+            else "MATI"
+        )
+
+        await ctx.send(
+            f"Presence Intent: **{presence}**\n"
+            f"Members Intent: **{members}**\n"
+            f"Status kamu menurut bot: **{ctx.author.status}**"
         )
 
     # ==========================================
