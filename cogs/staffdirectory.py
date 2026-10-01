@@ -324,13 +324,14 @@ class StaffDirectory(commands.Cog):
     # UPDATE LAST ACTIVE
     # ==========================================
 
-    def update_activity(self, member_id):
+    def update_activity(self, member_id, timestamp=None):
 
-        timestamp = int(
-            datetime.now(
-                timezone.utc
-            ).timestamp()
-        )
+        if timestamp is None:
+            timestamp = int(
+                datetime.now(
+                    timezone.utc
+                ).timestamp()
+            )
 
         old_timestamp = self.activity_data.get(
             str(member_id)
@@ -350,6 +351,12 @@ class StaffDirectory(commands.Cog):
     # ==========================================
 
     def get_activity_status(self, member):
+        """
+        Menentukan status staff berdasarkan presence Discord.
+
+        Online, Idle, dan DND semuanya dianggap aktif.
+        Hanya Offline yang dianggap tidak aktif.
+        """
 
         timestamp = self.activity_data.get(
             str(member.id)
@@ -367,7 +374,6 @@ class StaffDirectory(commands.Cog):
             self.OFFLINE_EMOJI_ID
         )
 
-        # Fallback jika emoji tidak ditemukan
         online_emoji = (
             str(online_emoji)
             if online_emoji
@@ -381,37 +387,32 @@ class StaffDirectory(commands.Cog):
         )
 
         # ======================================
-        # STAFF SEDANG AKTIF
+        # SEMUA STATUS AKTIF
         # ======================================
 
-        if member.status in (
+        active_statuses = {
             discord.Status.online,
             discord.Status.idle,
             discord.Status.dnd
-        ):
+        }
 
+        if member.status in active_statuses:
+
+            # Jika staff aktif tetapi belum pernah punya
+            # data aktivitas, simpan waktu sekarang.
             if not timestamp:
+                self.update_activity(member.id)
 
-                timestamp = int(
-                    datetime.now(
-                        timezone.utc
-                    ).timestamp()
-                )
-
-                self.activity_data[
-                    str(member.id)
-                ] = timestamp
-
-                self.save_activity()
-
-            return f"{online_emoji} **Aktif sekarang**"
+            return (
+                f"{online_emoji} "
+                f"**Aktif sekarang**"
+            )
 
         # ======================================
-        # STAFF SUDAH OFFLINE
+        # STAFF OFFLINE
         # ======================================
 
         if timestamp:
-
             return (
                 f"{offline_emoji} "
                 f"**Aktif <t:{timestamp}:R>**"
@@ -902,44 +903,48 @@ class StaffDirectory(commands.Cog):
         after
     ):
 
+        # ======================================
+        # CEK STAFF ASTRALAN
+        # ======================================
+
         is_staff = any(
-            role.id in self.message_ids
+            role.id in {
+                role_info["role_id"]
+                for role_info in self.STAFF_ROLES
+            }
             for role in after.roles
         )
 
         if not is_staff:
             return
 
-        # Tidak ada perubahan status.
-        if before.status == after.status:
-            return
-
         # ======================================
-        # UPDATE AKTIVITAS SAAT ONLINE
+        # STATUS AKTIF
+        # Online / Idle / DND
+        # semuanya dianggap aktif.
         # ======================================
 
-        if after.status != discord.Status.offline:
+        active_statuses = {
+            discord.Status.online,
+            discord.Status.idle,
+            discord.Status.dnd
+        }
+
+        if after.status in active_statuses:
 
             self.update_activity(
                 after.id
             )
 
         # ======================================
-        # REFRESH PANEL
+        # REFRESH SETIAP ADA PERUBAHAN STATUS
         # ======================================
-        # Berlaku untuk:
-        # OFFLINE → ONLINE
-        # ONLINE → IDLE
-        # ONLINE → DND
-        # IDLE → ONLINE
-        # ONLINE → OFFLINE
-        #
-        # Jadi panel selalu mengikuti status Discord
-        # terbaru, bukan hanya saat staff kembali online.
 
-        self.schedule_refresh(
-            after.guild
-        )
+        if before.status != after.status:
+
+            self.schedule_refresh(
+                after.guild
+            )
 
     # ==========================================
     # ROLE STAFF BERUBAH
