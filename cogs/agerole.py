@@ -37,6 +37,7 @@ class RoleSelect(discord.ui.Select):
 
         for name, data in ROLES.items():
             role = interaction.guild.get_role(data["id"])
+
             if not role:
                 continue
 
@@ -44,6 +45,7 @@ class RoleSelect(discord.ui.Select):
                 if role not in interaction.user.roles:
                     await interaction.user.add_roles(role)
                     added.append(role.name)
+
             else:
                 if role in interaction.user.roles:
                     await interaction.user.remove_roles(role)
@@ -53,13 +55,17 @@ class RoleSelect(discord.ui.Select):
 
         if added:
             msg += "**Diambil:** " + ", ".join(added) + "\n"
+
         if removed:
             msg += "**Dilepas:** " + ", ".join(removed)
 
         if not msg:
             msg = "Role kamu sudah sesuai!"
 
-        await interaction.response.send_message(msg, ephemeral=True)
+        await interaction.response.send_message(
+            msg,
+            ephemeral=True
+        )
 
 
 class RoleView(discord.ui.View):
@@ -77,23 +83,41 @@ class Agerole(commands.Cog):
     async def setup_age(self, ctx):
         embed = discord.Embed(
             title="Age Roles Panel",
-            description="Pilih kategori umur kamu di bawah.\n(Hanya bisa memilih satu role, otomatis mengganti role lama jika ada).",
+            description=(
+                "Pilih kategori umur kamu di bawah.\n"
+                "(Hanya bisa memilih satu role, "
+                "otomatis mengganti role lama jika ada)."
+            ),
             color=discord.Color.blue()
         )
 
-        file = discord.File("banner_age.png", filename="age.png")   
+        file = discord.File(
+            "banner_age.png",
+            filename="age.png"
+        )
+
         embed.set_image(url="attachment://age.png")
 
         embed.add_field(
             name="Available Roles",
             value="\n".join(
-                [f"{data['emoji']} {name}" for name, data in ROLES.items()]
+                [
+                    f"{data['emoji']} {name}"
+                    for name, data in ROLES.items()
+                ]
             ),
             inline=False
         )
 
-        await ctx.send(embed=embed, view=RoleView(), file=file)
+        await ctx.send(
+            embed=embed,
+            view=RoleView(),
+            file=file
+        )
 
 
 async def setup(bot):
+    # Register persistent view
+    bot.add_view(RoleView())
+
     await bot.add_cog(Agerole(bot))

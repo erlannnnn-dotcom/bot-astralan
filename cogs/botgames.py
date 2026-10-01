@@ -38,6 +38,7 @@ class RoleSelect(discord.ui.Select):
 
         for name, data in ROLES.items():
             role = interaction.guild.get_role(data["id"])
+
             if not role:
                 continue
 
@@ -54,13 +55,17 @@ class RoleSelect(discord.ui.Select):
 
         if added:
             msg += "**Diambil:** " + ", ".join(added) + "\n"
+
         if removed:
             msg += "**Dilepas:** " + ", ".join(removed)
 
         if not msg:
             msg = "Role kamu sudah sesuai!"
 
-        await interaction.followup.send(msg, ephemeral=True)
+        await interaction.followup.send(
+            msg,
+            ephemeral=True
+        )
 
 
 class RoleView(discord.ui.View):
@@ -78,23 +83,41 @@ class BotGames(commands.Cog):
     async def setup_botgames(self, ctx):
         embed = discord.Embed(
             title="Bot Games Roles Panel",
-            description="Pilih role bot games kamu di bawah ini.\n(Hanya bisa memilih satu role, otomatis mengganti role lama jika ada).",
+            description=(
+                "Pilih role bot games kamu di bawah ini.\n"
+                "(Hanya bisa memilih satu role, "
+                "otomatis mengganti role lama jika ada)."
+            ),
             color=discord.Color.green()
         )
 
-        file = discord.File("banner_botgames.png", filename="botgames.png")
+        file = discord.File(
+            "banner_botgames.png",
+            filename="botgames.png"
+        )
+
         embed.set_image(url="attachment://botgames.png")
 
         embed.add_field(
             name="Available Roles",
             value="\n".join(
-                [f"{data['emoji']} {name}" for name, data in ROLES.items()]
+                [
+                    f"{data['emoji']} {name}"
+                    for name, data in ROLES.items()
+                ]
             ),
             inline=False
         )
 
-        await ctx.send(embed=embed, view=RoleView(), file=file)
+        await ctx.send(
+            embed=embed,
+            view=RoleView(),
+            file=file
+        )
 
 
 async def setup(bot):
+    # Register persistent view agar tetap aktif setelah restart
+    bot.add_view(RoleView())
+
     await bot.add_cog(BotGames(bot))

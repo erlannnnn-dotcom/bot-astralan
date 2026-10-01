@@ -39,6 +39,7 @@ class RoleSelect(discord.ui.Select):
 
         for name, data in ROLES.items():
             role = interaction.guild.get_role(data["id"])
+
             if not role:
                 continue
 
@@ -55,13 +56,17 @@ class RoleSelect(discord.ui.Select):
 
         if added:
             msg += "**Diambil:** " + ", ".join(added) + "\n"
+
         if removed:
             msg += "**Dilepas:** " + ", ".join(removed)
 
         if not msg:
             msg = "Role kamu sudah sesuai!"
 
-        await interaction.response.send_message(msg, ephemeral=True)
+        await interaction.response.send_message(
+            msg,
+            ephemeral=True
+        )
 
 
 class RoleView(discord.ui.View):
@@ -79,11 +84,18 @@ class PingRoles(commands.Cog):
     async def setup_pingroles(self, ctx):
         embed = discord.Embed(
             title="Notification & Ping Roles Panel",
-            description="Pilih role notifikasi yang kamu inginkan di bawah ini.\n(Bisa memilih lebih dari satu role sekaligus).",
+            description=(
+                "Pilih role notifikasi yang kamu inginkan di bawah ini.\n"
+                "(Bisa memilih lebih dari satu role sekaligus)."
+            ),
             color=discord.Color.gold()
         )
 
-        file = discord.File("banner_pingroles.png", filename="pingroles.png")
+        file = discord.File(
+            "banner_pingroles.png",
+            filename="pingroles.png"
+        )
+
         embed.set_image(url="attachment://pingroles.png")
 
         embed.add_field(
@@ -94,8 +106,15 @@ class PingRoles(commands.Cog):
             inline=False
         )
 
-        await ctx.send(embed=embed, view=RoleView(), file=file)
+        await ctx.send(
+            embed=embed,
+            view=RoleView(),
+            file=file
+        )
 
 
 async def setup(bot):
+    # Register persistent view
+    bot.add_view(RoleView())
+
     await bot.add_cog(PingRoles(bot))
