@@ -16,7 +16,7 @@ class StaffDirectory(commands.Cog):
         # ==========================================
 
         # Channel tempat Staff Directory ditampilkan
-        self.CHANNEL_ID = 1553032690465251410
+        self.CHANNEL_ID = 1555101827521847366
 
         # ==========================================
         # ASTRALAN STATUS EMOJI
@@ -71,10 +71,24 @@ class StaffDirectory(commands.Cog):
         # MESSAGE ID
         # ==========================================
 
+        # ID pesan disimpan ke file agar tetap sama setelah bot restart.
+        self.message_file = "staff_directory_messages.json"
+        self.directory_state = self.load_message_state()
+
+        saved_messages = self.directory_state.get("messages", {})
+
         self.message_ids = {
-            role["role_id"]: None
+            role["role_id"]: saved_messages.get(
+                str(role["role_id"])
+            )
             for role in self.STAFF_ROLES
         }
+
+        # Gunakan channel yang tersimpan jika tersedia.
+        self.CHANNEL_ID = self.directory_state.get(
+            "channel_id",
+            self.CHANNEL_ID
+        )
 
         # ==========================================
         # EMBED CACHE
@@ -104,6 +118,150 @@ class StaffDirectory(commands.Cog):
         # ==========================================
 
         self.update_directory.start()
+
+    # ==========================================
+    # LOAD MESSAGE STATE
+    # ==========================================
+
+    def load_message_state(self):
+        """Membaca state pesan. Jika belum ada, otomatis membuat JSON."""
+
+        default_data = {
+            "channel_id": self.CHANNEL_ID,
+            "messages": {}
+        }
+
+        # JSON belum ada -> buat otomatis.
+        if not os.path.exists(self.message_file):
+            try:
+                with open(
+                    self.message_file,
+                    "w",
+                    encoding="utf-8"
+                ) as f:
+                    json.dump(
+                        default_data,
+                        f,
+                        indent=4,
+                        ensure_ascii=False
+                    )
+
+                print(
+                    "[ASTRALAN DIRECTORY] "
+                    f"File {self.message_file} dibuat otomatis."
+                )
+
+            except Exception as e:
+                print(
+                    "[ASTRALAN DIRECTORY] "
+                    f"Gagal membuat message state: {e}"
+                )
+
+            return default_data
+
+        try:
+            with open(
+                self.message_file,
+                "r",
+                encoding="utf-8"
+            ) as f:
+
+                data = json.load(f)
+
+            if not isinstance(data, dict):
+                return {
+                    "channel_id": self.CHANNEL_ID,
+                    "messages": {}
+                }
+
+            data.setdefault(
+                "channel_id",
+                self.CHANNEL_ID
+            )
+            data.setdefault(
+                "messages",
+                {}
+            )
+
+            return data
+
+        except Exception as e:
+
+            print(
+                f"[ASTRALAN DIRECTORY] "
+                f"Gagal membaca message state: {e}"
+            )
+
+            # File rusak -> gunakan state kosong lalu perbaiki file.
+            self._write_default_message_state(default_data)
+            return default_data
+
+    def _write_default_message_state(self, data=None):
+        """Membuat / memperbaiki file JSON state."""
+
+        if data is None:
+            data = {
+                "channel_id": self.CHANNEL_ID,
+                "messages": {}
+            }
+
+        try:
+            with open(
+                self.message_file,
+                "w",
+                encoding="utf-8"
+            ) as f:
+                json.dump(
+                    data,
+                    f,
+                    indent=4,
+                    ensure_ascii=False
+                )
+
+        except Exception as e:
+            print(
+                "[ASTRALAN DIRECTORY] "
+                f"Gagal membuat message state: {e}"
+            )
+
+    # ==========================================
+    # SAVE MESSAGE STATE
+    # ==========================================
+
+    def save_message_state(self):
+        """Menyimpan ID channel dan pesan Staff Directory."""
+
+        try:
+
+            data = {
+                "channel_id": self.CHANNEL_ID,
+                "messages": {
+                    str(role_id): message_id
+                    for role_id, message_id
+                    in self.message_ids.items()
+                    if message_id
+                }
+            }
+
+            with open(
+                self.message_file,
+                "w",
+                encoding="utf-8"
+            ) as f:
+
+                json.dump(
+                    data,
+                    f,
+                    indent=4,
+                    ensure_ascii=False
+                )
+
+        except Exception as e:
+
+            print(
+                f"[ASTRALAN DIRECTORY] "
+                f"Gagal menyimpan message state: {e}"
+            )
 
     # ==========================================
     # LOAD ACTIVITY
@@ -426,7 +584,7 @@ class StaffDirectory(commands.Cog):
         try:
 
             async for message in channel.history(
-                limit=100
+                limit=200
             ):
 
                 if message.author != self.bot.user:
@@ -444,10 +602,8 @@ class StaffDirectory(commands.Cog):
 
                     role_id = role_info["role_id"]
 
-                    if role_id in self.message_ids:
-
-                        if self.message_ids[role_id]:
-                            continue
+                    if self.message_ids.get(role_id):
+                        continue
 
                     if role_info["name"] in author.name:
 
@@ -557,6 +713,9 @@ class StaffDirectory(commands.Cog):
                         role_id
                     ] = message_id
 
+                if found_messages:
+                    self.save_message_state()
+
             # ==================================
             # UPDATE SETIAP PANEL
             # ==================================
@@ -635,6 +794,8 @@ class StaffDirectory(commands.Cog):
                                 role_id
                             ] = None
 
+                            self.save_message_state()
+
                             self.embed_cache.pop(
                                 role_id,
                                 None
@@ -661,6 +822,8 @@ class StaffDirectory(commands.Cog):
                     self.message_ids[
                         role_id
                     ] = new_message.id
+
+                    self.save_message_state()
 
                     self.embed_cache[
                         role_id
@@ -841,7 +1004,11 @@ class StaffDirectory(commands.Cog):
         ctx
     ):
 
+        # Simpan channel tujuan agar tetap digunakan setelah restart.
         self.CHANNEL_ID = ctx.channel.id
+        self.directory_state["channel_id"] = self.CHANNEL_ID
+
+        self.save_message_state()
 
         try:
 
@@ -850,39 +1017,15 @@ class StaffDirectory(commands.Cog):
         except Exception:
             pass
 
-        # Reset cache
+        # Jangan membuat panel baru setiap kali command dijalankan.
+        # refresh_all_panels akan mencari pesan lama lalu mengeditnya.
         self.embed_cache.clear()
 
-        # ======================================
-        # BUAT PANEL ASTRALAN
-        # ======================================
-
-        for role_info in self.STAFF_ROLES:
-
-            embed = (
-                await self.generate_role_embed(
-                    ctx.guild,
-                    role_info
-                )
-            )
-
-            message = await ctx.send(
-                embed=embed
-            )
-
-            role_id = role_info["role_id"]
-
-            self.message_ids[
-                role_id
-            ] = message.id
-
-            self.embed_cache[
-                role_id
-            ] = embed.to_dict()
+        await self.refresh_all_panels(ctx.guild)
 
         print(
             "[ASTRALAN DIRECTORY] "
-            "Directory berhasil dibuat."
+            "Directory berhasil dibuat / diperbarui."
         )
 
     # ==========================================
