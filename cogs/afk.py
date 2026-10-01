@@ -23,9 +23,9 @@ WIB = timedelta(hours=7)
 # INTERNAL SERVER EMOJIS
 # =========================================================
 
-ARROW_BLUE = "<:arrowblue:1555096801629970523>"
-LAMP_PURPLE = "<:lampuungu:1555112848131104859>"
-FLOWER_PURPLE = "<:bungaungu:1555113270443253791>"
+ARROW_BLUE = "<a:arrowblue:1555096801629970523>"
+LAMP_PURPLE = "<a:lampuungu:1555112848131104859>"
+FLOWER_PURPLE = "<a:bungaungu:1555113270443253791>"
 
 
 # =========================================================
