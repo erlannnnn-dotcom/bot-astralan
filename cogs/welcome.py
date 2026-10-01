@@ -559,29 +559,49 @@ class Welcome(commands.Cog):
             print(f"[LEAVE] Error: {e}")
 
     # ── command tes (khusus admin) ───────────────────────────────────────────
-    async def _run_test(self, ctx: commands.Context, member: discord.Member, kind: str):
-        async with ctx.typing():
+    async def _run_test(self, channel, guild: discord.Guild, member: discord.Member, kind: str):
+        async with channel.typing():
             try:
-                count = ctx.guild.member_count or 0
+                count = guild.member_count or 0
                 if kind == "leave":
                     count = max(count - 1, 0)  # simulasi: sisa member setelah keluar
-                channel = await self.send_notification(member, kind, count=count)
+                target = await self.send_notification(member, kind, count=count)
             except Exception as e:
-                await ctx.send(f"❌ Tes **{kind}** gagal: `{type(e).__name__}: {e}`")
+                await channel.send(f"❌ Tes **{kind}** gagal: `{type(e).__name__}: {e}`")
                 return
-        await ctx.send(f"✅ Tes **{kind}** terkirim ke {channel.mention} (pakai data {member.display_name}).")
+        await channel.send(f"✅ Tes **{kind}** terkirim ke {target.mention} (pakai data {member.display_name}).")
 
-    @commands.hybrid_command(name="astwelcome", description="Tes kartu welcome (admin)")
-    @commands.guild_only()
-    @commands.has_permissions(administrator=True)
-    async def astwelcome(self, ctx: commands.Context, member: Optional[discord.Member] = None):
-        await self._run_test(ctx, member or ctx.author, "welcome")
+    # Tanpa prefix: ketik "astwelcome" atau "astleave" (boleh diikuti @member)
+    @commands.Cog.listener()
+    async def on_message(self, message: discord.Message):
+        if message.author.bot or message.guild is None:
+            return
+        parts = message.content.strip().split()
+        if not parts or parts[0].lower() not in ("astwelcome", "astleave"):
+            return
+        if not message.author.guild_permissions.administrator:
+            await message.channel.send("❌ Command ini khusus admin.")
+            return
+        kind = "welcome" if parts[0].lower() == "astwelcome" else "leave"
+        member = message.mentions[0] if message.mentions else message.author
+        await self._run_test(message.channel, message.guild, member, kind)
 
-    @commands.hybrid_command(name="astleave", description="Tes kartu leave (admin)")
-    @commands.guild_only()
-    @commands.has_permissions(administrator=True)
-    async def astleave(self, ctx: commands.Context, member: Optional[discord.Member] = None):
-        await self._run_test(ctx, member or ctx.author, "leave")
+    # Slash command (/astwelcome, /astleave) tetap ada
+    @discord.app_commands.command(name="astwelcome", description="Tes kartu welcome (admin)")
+    @discord.app_commands.guild_only()
+    @discord.app_commands.default_permissions(administrator=True)
+    async def astwelcome(self, interaction: discord.Interaction, member: Optional[discord.Member] = None):
+        await interaction.response.defer()
+        await self._run_test(interaction.channel, interaction.guild, member or interaction.user, "welcome")
+        await interaction.delete_original_response()
+
+    @discord.app_commands.command(name="astleave", description="Tes kartu leave (admin)")
+    @discord.app_commands.guild_only()
+    @discord.app_commands.default_permissions(administrator=True)
+    async def astleave(self, interaction: discord.Interaction, member: Optional[discord.Member] = None):
+        await interaction.response.defer()
+        await self._run_test(interaction.channel, interaction.guild, member or interaction.user, "leave")
+        await interaction.delete_original_response()
 
     async def cog_command_error(self, ctx: commands.Context, error: Exception):
         if isinstance(error, commands.MissingPermissions):

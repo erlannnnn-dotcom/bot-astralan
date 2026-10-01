@@ -1,13 +1,16 @@
 import discord
 from discord.ext import commands
 import os
+import asyncio
 from dotenv import load_dotenv
 from cogs.role import GameRoleView
 from cogs.vibesrole import RoleView
 from cogs.genderrole import GenderView
 from cogs.ticket import TicketView
 
-load_dotenv()
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+load_dotenv(os.path.join(BASE_DIR, ".env"))
+
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 
 intents = discord.Intents.default()
@@ -30,7 +33,8 @@ async def on_ready():
 
 # ================= LOAD COGS =================
 async def load_extensions():
-    for file in os.listdir("./cogs"):
+    cogs_dir = os.path.join(BASE_DIR, "cogs")
+    for file in os.listdir(cogs_dir):
         if file.endswith(".py"):
             await bot.load_extension(f"cogs.{file[:-3]}")
     print("Cogs loaded")
@@ -41,5 +45,5 @@ async def main():
         await load_extensions()
         await bot.start(DISCORD_TOKEN)
 
-import asyncio
-asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main())
