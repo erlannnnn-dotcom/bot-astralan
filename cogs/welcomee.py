@@ -414,7 +414,7 @@ class Welcomee(commands.Cog):
             f"Selamat datang di **{SERVER_NAME}**, {member.mention}!\n"
             f"{ARROW_EMOJI} `Baca rules:` <#{RULES_CHANNEL_ID}>\n"
             f"{ARROW_EMOJI} `Pilih role:` <#{ROLE_CHANNEL_ID}>\n"
-            f"{VERIF_GIRL_EMOJI} `Verif girl:` lalu masuk ke <#{VOICE_GIRL_ID}>"
+            f"{VERIF_GIRL_EMOJI} `Verif girl:` <#{VOICE_GIRL_ID}>"
         )
 
     # ── bikin gambar + kirim pesan (tanpa embed) ─────────────────────────────
