@@ -16,7 +16,7 @@ class StaffDirectory(commands.Cog):
         # ==========================================
 
         # Channel tempat Staff Directory ditampilkan
-        self.CHANNEL_ID = 1555101827521847366
+        self.CHANNEL_ID = 1553032690465251410
 
         # ==========================================
         # ASTRALAN STATUS EMOJI
@@ -384,7 +384,11 @@ class StaffDirectory(commands.Cog):
         # STAFF SEDANG AKTIF
         # ======================================
 
-        if member.status != discord.Status.offline:
+        if member.status in (
+            discord.Status.online,
+            discord.Status.idle,
+            discord.Status.dnd
+        ):
 
             if not timestamp:
 
@@ -688,6 +692,21 @@ class StaffDirectory(commands.Cog):
                 return
 
             # ==================================
+            # SINKRONKAN DATA MEMBER / PRESENCE
+            # ==================================
+            # Setelah bot restart, cache presence bisa belum terisi.
+            # Chunk guild terlebih dahulu agar member.status yang
+            # digunakan oleh directory mencerminkan status terbaru.
+            try:
+                if not guild.chunked:
+                    await guild.chunk(cache=True)
+            except Exception as e:
+                print(
+                    "[ASTRALAN DIRECTORY] "
+                    f"Gagal sinkronisasi member: {e}"
+                )
+
+            # ==================================
             # CARI MESSAGE LAMA
             # ==================================
 
@@ -891,22 +910,36 @@ class StaffDirectory(commands.Cog):
         if not is_staff:
             return
 
+        # Tidak ada perubahan status.
+        if before.status == after.status:
+            return
+
         # ======================================
-        # OFFLINE → ONLINE
+        # UPDATE AKTIVITAS SAAT ONLINE
         # ======================================
 
-        if (
-            before.status == discord.Status.offline
-            and after.status != discord.Status.offline
-        ):
+        if after.status != discord.Status.offline:
 
             self.update_activity(
                 after.id
             )
 
-            self.schedule_refresh(
-                after.guild
-            )
+        # ======================================
+        # REFRESH PANEL
+        # ======================================
+        # Berlaku untuk:
+        # OFFLINE → ONLINE
+        # ONLINE → IDLE
+        # ONLINE → DND
+        # IDLE → ONLINE
+        # ONLINE → OFFLINE
+        #
+        # Jadi panel selalu mengikuti status Discord
+        # terbaru, bukan hanya saat staff kembali online.
+
+        self.schedule_refresh(
+            after.guild
+        )
 
     # ==========================================
     # ROLE STAFF BERUBAH
