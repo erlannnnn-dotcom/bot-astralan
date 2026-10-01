@@ -282,53 +282,10 @@ class StaffDirectory(commands.Cog):
 
     async def generate_header_embed(self, guild):
 
-        # Staff unik (satu orang bisa punya lebih dari satu role)
-        unique_members = {}
-
-        for role_info in self.STAFF_ROLES:
-
-            role = guild.get_role(
-                role_info["role_id"]
-            )
-
-            if not role:
-                continue
-
-            for member in role.members:
-                unique_members[member.id] = member
-
-        total = len(unique_members)
-
-        active = sum(
-            1
-            for member in unique_members.values()
-            if member.status != discord.Status.offline
-        )
-
+        # Panel pertama hanya berisi judul.
         embed = discord.Embed(
             title=f"{self.ARROW_BLUE} {self.HEADER_TITLE}",
-            description=(
-                "Daftar staff Astralan dan status aktivitasnya."
-            ),
             color=self.HEADER_COLOR
-        )
-
-        embed.add_field(
-            name="Total staff",
-            value=str(total),
-            inline=True
-        )
-
-        embed.add_field(
-            name="Aktif",
-            value=str(active),
-            inline=True
-        )
-
-        embed.add_field(
-            name="Offline",
-            value=str(total - active),
-            inline=True
         )
 
         return embed
@@ -619,6 +576,39 @@ class StaffDirectory(commands.Cog):
                 return
 
             # ==================================
+            # PASTIKAN STATUS ONLINE TERBACA
+            # ==================================
+            # Tanpa Presence Intent, semua member akan terbaca offline.
+
+            if not self.bot.intents.presences:
+
+                print(
+                    "[STAFF DIRECTORY] PERINGATAN: Presence Intent "
+                    "belum aktif, semua staff akan terbaca offline."
+                )
+
+            if not self.bot.intents.members:
+
+                print(
+                    "[STAFF DIRECTORY] PERINGATAN: Members Intent "
+                    "belum aktif, daftar staff bisa tidak lengkap."
+                )
+
+            # Setelah restart, cache member / presence bisa
+            # belum terisi. Chunk guild agar status terbaru terbaca.
+            try:
+
+                if not guild.chunked:
+                    await guild.chunk(cache=True)
+
+            except Exception as e:
+
+                print(
+                    "[STAFF DIRECTORY] "
+                    f"Gagal sinkronisasi member: {e}"
+                )
+
+            # ==================================
             # CARI MESSAGE LAMA SEKALI SAJA
             # ==================================
 
@@ -833,24 +823,34 @@ class StaffDirectory(commands.Cog):
             return
 
         # ======================================
-        # OFFLINE → ONLINE
+        # STATUS AKTIF = ONLINE / IDLE / DND
+        # Hanya OFFLINE yang dianggap tidak aktif.
         # ======================================
 
-        if (
-            before.status == discord.Status.offline
-            and after.status != discord.Status.offline
-        ):
+        was_active = (
+            before.status != discord.Status.offline
+        )
 
-            # Simpan aktivitas terakhir
-            self.update_activity(
-                after.id
-            )
+        now_active = (
+            after.status != discord.Status.offline
+        )
 
-            # Jangan langsung refresh.
-            # Masukkan ke debounce.
-            self.schedule_refresh(
-                after.guild
-            )
+        # Tidak ada perubahan aktif <-> offline
+        # (contoh: online -> dnd), tidak perlu refresh.
+        if was_active == now_active:
+            return
+
+        # Catat waktu: saat mulai aktif ATAU saat baru offline
+        # (jadi "Aktif X yang lalu" = terakhir terlihat).
+        self.update_activity(
+            after.id
+        )
+
+        # Jangan langsung refresh.
+        # Masukkan ke debounce.
+        self.schedule_refresh(
+            after.guild
+        )
 
     # ==========================================
     # ROLE STAFF BERUBAH
