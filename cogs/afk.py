@@ -4,7 +4,7 @@ from discord import app_commands
 
 import sqlite3
 import random
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 
@@ -12,10 +12,20 @@ from pathlib import Path
 # CONFIG
 # =========================================================
 
-# Lokasi database:
-# /root/discord-kim/afk.db
 BASE_DIR = Path(__file__).resolve().parent.parent
 DB_PATH = BASE_DIR / "afk.db"
+
+# WIB = UTC + 7
+WIB = timedelta(hours=7)
+
+
+# =========================================================
+# INTERNAL SERVER EMOJIS
+# =========================================================
+
+ARROW_BLUE = "<:arrowblue:1555096801629970523>"
+LAMP_PURPLE = "<:lampuungu:1555112848131104859>"
+FLOWER_PURPLE = "<:bungaungu:1555113270443253791>"
 
 
 # =========================================================
@@ -23,39 +33,47 @@ DB_PATH = BASE_DIR / "afk.db"
 # =========================================================
 
 class AFK(commands.Cog):
+
     def __init__(self, bot):
         self.bot = bot
 
-        # Cache AFK di RAM untuk akses cepat.
-        # Database tetap menjadi penyimpanan utama.
+        # Cache AFK di RAM
         self.afk_users = {}
 
-        # Pastikan database dan tabel otomatis dibuat.
+        # Buat database otomatis
         self.init_database()
 
-        # Load data AFK lama dari database.
+        # Load data AFK dari database
         self.load_afk_data()
+
+    # =====================================================
+    # TIME
+    # =====================================================
+
+    def now_wib(self):
+        """
+        Mengambil waktu sekarang dalam WIB.
+        """
+        return datetime.utcnow() + WIB
 
     # =====================================================
     # DATABASE
     # =====================================================
 
     def get_connection(self):
-        """
-        Membuka koneksi SQLite ke database AFK.
-        """
         conn = sqlite3.connect(DB_PATH)
         conn.row_factory = sqlite3.Row
         return conn
 
     def init_database(self):
         """
-        Membuat database dan tabel AFK jika belum ada.
+        Membuat database dan tabel AFK otomatis.
         """
 
-        # Folder utama bot harusnya sudah ada,
-        # tetapi tetap dibuat jika diperlukan.
-        DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+        DB_PATH.parent.mkdir(
+            parents=True,
+            exist_ok=True
+        )
 
         conn = self.get_connection()
 
@@ -80,8 +98,8 @@ class AFK(commands.Cog):
 
     def load_afk_data(self):
         """
-        Memuat seluruh status AFK dari database ke RAM
-        ketika cog pertama kali dijalankan.
+        Memuat data AFK dari database ketika cog
+        pertama kali dijalankan.
         """
 
         self.afk_users.clear()
@@ -92,26 +110,34 @@ class AFK(commands.Cog):
             cursor = conn.cursor()
 
             cursor.execute("""
-                SELECT user_id, guild_id, reason, since
+                SELECT
+                    user_id,
+                    guild_id,
+                    reason,
+                    since
                 FROM afk_users
             """)
 
             rows = cursor.fetchall()
 
             for row in rows:
+
                 try:
-                    since = datetime.fromisoformat(row["since"])
+                    since = datetime.fromisoformat(
+                        row["since"]
+                    )
 
                     self.afk_users[
-                        (row["guild_id"], row["user_id"])
+                        (
+                            row["guild_id"],
+                            row["user_id"]
+                        )
                     ] = {
                         "reason": row["reason"],
                         "since": since
                     }
 
                 except Exception:
-                    # Kalau ada satu data rusak,
-                    # jangan sampai seluruh cog gagal load.
                     continue
 
         finally:
@@ -125,7 +151,7 @@ class AFK(commands.Cog):
         since: datetime
     ):
         """
-        Menyimpan / memperbarui status AFK ke database.
+        Simpan / update status AFK.
         """
 
         conn = self.get_connection()
@@ -164,7 +190,7 @@ class AFK(commands.Cog):
         user_id: int
     ):
         """
-        Menghapus status AFK dari database.
+        Hapus status AFK dari database.
         """
 
         conn = self.get_connection()
@@ -191,21 +217,47 @@ class AFK(commands.Cog):
     # =====================================================
 
     def random_color(self):
-        return discord.Color(random.randint(0, 0xFFFFFF))
+        return discord.Color(
+            random.randint(
+                0,
+                0xFFFFFF
+            )
+        )
 
     def format_time(self, seconds):
-        minutes, seconds = divmod(seconds, 60)
-        hours, minutes = divmod(minutes, 60)
-        days, hours = divmod(hours, 24)
+
+        minutes, seconds = divmod(
+            seconds,
+            60
+        )
+
+        hours, minutes = divmod(
+            minutes,
+            60
+        )
+
+        days, hours = divmod(
+            hours,
+            24
+        )
 
         if days > 0:
-            return f"{days} hari {hours} jam"
+            return (
+                f"{days} hari "
+                f"{hours} jam"
+            )
 
         elif hours > 0:
-            return f"{hours} jam {minutes} menit"
+            return (
+                f"{hours} jam "
+                f"{minutes} menit"
+            )
 
         elif minutes > 0:
-            return f"{minutes} menit {seconds} detik"
+            return (
+                f"{minutes} menit "
+                f"{seconds} detik"
+            )
 
         else:
             return f"{seconds} detik"
@@ -226,23 +278,29 @@ class AFK(commands.Cog):
         interaction: discord.Interaction,
         reason: str = "AFK"
     ):
+
         user = interaction.user
 
-        # Command AFK harus digunakan di server.
+        # Harus di server
         if interaction.guild is None:
+
             await interaction.response.send_message(
-                "❌ Command ini hanya bisa digunakan di server.",
+                f"{LAMP_PURPLE} Command ini hanya bisa digunakan di server.",
                 ephemeral=True
             )
+
             return
 
         guild_id = interaction.guild.id
         user_id = user.id
 
-        # Waktu AFK.
-        since = datetime.utcnow()
+        # Waktu WIB
+        since = self.now_wib()
 
-        # Simpan ke database.
+        # =================================================
+        # SIMPAN DATABASE
+        # =================================================
+
         self.save_afk(
             guild_id=guild_id,
             user_id=user_id,
@@ -250,29 +308,39 @@ class AFK(commands.Cog):
             since=since
         )
 
-        # Simpan ke cache RAM.
+        # =================================================
+        # CACHE
+        # =================================================
+
         self.afk_users[
-            (guild_id, user_id)
+            (
+                guild_id,
+                user_id
+            )
         ] = {
             "reason": reason,
             "since": since
         }
 
         # =================================================
-        # UBAH NICKNAME
+        # NICKNAME
         # =================================================
 
         try:
+
             current_name = user.display_name
 
-            # Hindari menjadi:
-            # [AFK] [AFK] Nama
             if current_name.startswith("[AFK] "):
                 new_name = current_name
-            else:
-                new_name = f"[AFK] {current_name}"
 
-            await user.edit(nick=new_name)
+            else:
+                new_name = (
+                    f"[AFK] {current_name}"
+                )
+
+            await user.edit(
+                nick=new_name
+            )
 
         except discord.Forbidden:
             pass
@@ -288,13 +356,14 @@ class AFK(commands.Cog):
         # =================================================
 
         embed = discord.Embed(
-            title="🌙 AFK Status Aktif",
+            title=f"{LAMP_PURPLE} AFK Status Aktif",
             description=(
-                f"{user.mention} telah mengaktifkan status AFK.\n\n"
-                f"**Alasan:** {reason}"
+                f"{ARROW_BLUE} {user.mention} "
+                f"telah mengaktifkan status AFK.\n\n"
+                f"{FLOWER_PURPLE} **Alasan:** {reason}"
             ),
             color=self.random_color(),
-            timestamp=datetime.utcnow()
+            timestamp=since
         )
 
         embed.set_footer(
@@ -310,13 +379,16 @@ class AFK(commands.Cog):
     # =====================================================
 
     @commands.Cog.listener()
-    async def on_message(self, message):
+    async def on_message(
+        self,
+        message
+    ):
 
-        # Abaikan bot.
+        # Abaikan bot
         if message.author.bot:
             return
 
-        # Pesan DM tidak memiliki guild.
+        # Abaikan DM
         if message.guild is None:
             return
 
@@ -334,17 +406,19 @@ class AFK(commands.Cog):
 
         if author_key in self.afk_users:
 
-            data = self.afk_users.pop(author_key)
+            data = self.afk_users.pop(
+                author_key
+            )
 
-            # Hapus dari database.
+            # Hapus database
             self.remove_afk(
                 guild_id=guild_id,
                 user_id=author_id
             )
 
-            # Hitung durasi AFK.
+            # Hitung durasi
             afk_time = (
-                datetime.utcnow() - data["since"]
+                self.now_wib() - data["since"]
             ).total_seconds()
 
             waktu = self.format_time(
@@ -356,10 +430,18 @@ class AFK(commands.Cog):
             # =================================================
 
             try:
-                current_name = message.author.display_name
 
-                if current_name.startswith("[AFK] "):
-                    original_name = current_name[6:]
+                current_name = (
+                    message.author.display_name
+                )
+
+                if current_name.startswith(
+                    "[AFK] "
+                ):
+
+                    original_name = (
+                        current_name[6:]
+                    )
 
                     await message.author.edit(
                         nick=original_name
@@ -375,17 +457,20 @@ class AFK(commands.Cog):
                 pass
 
             # =================================================
-            # WELCOME BACK EMBED
+            # WELCOME BACK
             # =================================================
 
             embed = discord.Embed(
-                title="👋 Welcome Back",
+                title=f"{FLOWER_PURPLE} Welcome Back",
                 description=(
-                    f"{message.author.mention} telah kembali.\n\n"
-                    f"**Durasi AFK:** {waktu}"
+                    f"{ARROW_BLUE} "
+                    f"{message.author.mention} "
+                    f"telah kembali.\n\n"
+                    f"{LAMP_PURPLE} **Durasi AFK:** "
+                    f"{waktu}"
                 ),
                 color=self.random_color(),
-                timestamp=datetime.utcnow()
+                timestamp=self.now_wib()
             )
 
             await message.channel.send(
@@ -396,8 +481,6 @@ class AFK(commands.Cog):
         # CEK MENTION
         # =================================================
 
-        # Set supaya kalau user dimention beberapa kali
-        # dalam satu pesan, hanya muncul satu notifikasi.
         mentioned_users = set()
 
         for user in message.mentions:
@@ -413,13 +496,20 @@ class AFK(commands.Cog):
             if user_key not in self.afk_users:
                 continue
 
-            mentioned_users.add(user.id)
+            mentioned_users.add(
+                user.id
+            )
 
-            data = self.afk_users[user_key]
+            data = self.afk_users[
+                user_key
+            ]
 
-            # Hitung durasi AFK.
+            # =================================================
+            # DURASI AFK
+            # =================================================
+
             afk_time = (
-                datetime.utcnow() - data["since"]
+                self.now_wib() - data["since"]
             ).total_seconds()
 
             waktu = self.format_time(
@@ -427,18 +517,22 @@ class AFK(commands.Cog):
             )
 
             # =================================================
-            # AFK MENTION EMBED
+            # AFK MENTION
             # =================================================
 
             embed = discord.Embed(
-                title="⚠️ Pengguna Sedang AFK",
+                title=f"{LAMP_PURPLE} Pengguna Sedang AFK",
                 description=(
-                    f"{user.mention} saat ini sedang AFK.\n\n"
-                    f"**Alasan:** {data['reason']}\n"
-                    f"**Sejak:** {waktu} yang lalu"
+                    f"{ARROW_BLUE} "
+                    f"{user.mention} "
+                    f"saat ini sedang AFK.\n\n"
+                    f"{FLOWER_PURPLE} **Alasan:** "
+                    f"{data['reason']}\n"
+                    f"{LAMP_PURPLE} **Sejak:** "
+                    f"{waktu} yang lalu"
                 ),
                 color=self.random_color(),
-                timestamp=datetime.utcnow()
+                timestamp=self.now_wib()
             )
 
             await message.channel.send(
