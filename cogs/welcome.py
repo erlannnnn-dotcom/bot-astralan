@@ -571,16 +571,16 @@ class Welcome(commands.Cog):
                 return
         await ctx.send(f"✅ Tes **{kind}** terkirim ke {channel.mention} (pakai data {member.display_name}).")
 
-    @commands.hybrid_command(name="testwelcome", description="Tes kartu welcome (admin)")
+    @commands.hybrid_command(name="astwelcome", description="Tes kartu welcome (admin)")
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
-    async def testwelcome(self, ctx: commands.Context, member: Optional[discord.Member] = None):
+    async def astwelcome(self, ctx: commands.Context, member: Optional[discord.Member] = None):
         await self._run_test(ctx, member or ctx.author, "welcome")
 
-    @commands.hybrid_command(name="testleave", description="Tes kartu leave (admin)")
+    @commands.hybrid_command(name="astleave", description="Tes kartu leave (admin)")
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
-    async def testleave(self, ctx: commands.Context, member: Optional[discord.Member] = None):
+    async def astleave(self, ctx: commands.Context, member: Optional[discord.Member] = None):
         await self._run_test(ctx, member or ctx.author, "leave")
 
     async def cog_command_error(self, ctx: commands.Context, error: Exception):
